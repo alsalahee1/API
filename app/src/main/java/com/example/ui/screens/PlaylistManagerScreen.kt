@@ -67,10 +67,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.example.data.service.M3UValidationResult
+import com.example.ui.components.AddPlaylistDialog
+
 @Composable
 fun PlaylistManagerScreen(
     playlists: List<Playlist>,
     isAdding: Boolean,
+    onValidateUrlSyntax: (String) -> M3UValidationResult,
+    onValidateRemoteUrl: suspend (String) -> M3UValidationResult,
     onAddUrl: (String, String) -> Unit,
     onAddText: (String, String) -> Unit,
     onAddXtream: (String, String, String, String) -> Unit,
@@ -149,11 +154,13 @@ fun PlaylistManagerScreen(
             }
         }
 
-        // Add Playlist Modal Dialog
+        // Add Playlist Modal Dialog with Validation Logic
         if (showAddDialog) {
             AddPlaylistDialog(
                 isAdding = isAdding,
                 onDismiss = { showAddDialog = false },
+                onValidateUrlSyntax = onValidateUrlSyntax,
+                onValidateRemoteUrl = onValidateRemoteUrl,
                 onAddUrl = { name, url ->
                     onAddUrl(name, url)
                     showAddDialog = false
@@ -326,175 +333,3 @@ private fun QuickPresetsBox(
     }
 }
 
-@Composable
-private fun AddPlaylistDialog(
-    isAdding: Boolean,
-    onDismiss: () -> Unit,
-    onAddUrl: (String, String) -> Unit,
-    onAddText: (String, String) -> Unit,
-    onAddXtream: (String, String, String, String) -> Unit
-) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var playlistName by remember { mutableStateOf("") }
-    var m3uUrl by remember { mutableStateOf("") }
-    var m3uText by remember { mutableStateOf("") }
-    var xtreamServer by remember { mutableStateOf("") }
-    var xtreamUser by remember { mutableStateOf("") }
-    var xtreamPass by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = DarkCardSurface,
-        title = {
-            Text("Add IPTV Playlist", color = Color.White, fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color.Transparent,
-                    contentColor = NeonCyan,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = NeonCyan
-                        )
-                    }
-                ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = { Text("M3U URL", fontSize = 12.sp) }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = { Text("Paste Text", fontSize = 12.sp) }
-                    )
-                    Tab(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        text = { Text("Xtream Codes", fontSize = 12.sp) }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                OutlinedTextField(
-                    value = playlistName,
-                    onValueChange = { playlistName = it },
-                    label = { Text("Playlist Name (Optional)") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = NeonCyan,
-                        unfocusedBorderColor = Color.Gray
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                when (selectedTab) {
-                    0 -> {
-                        OutlinedTextField(
-                            value = m3uUrl,
-                            onValueChange = { m3uUrl = it },
-                            label = { Text("M3U / M3U8 Stream URL") },
-                            placeholder = { Text("https://example.com/playlist.m3u") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = NeonCyan,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    1 -> {
-                        OutlinedTextField(
-                            value = m3uText,
-                            onValueChange = { m3uText = it },
-                            label = { Text("Raw M3U Content") },
-                            placeholder = { Text("#EXTM3U\n#EXTINF:-1,Channel 1\nhttp://...") },
-                            maxLines = 5,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = NeonCyan,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
-                        )
-                    }
-                    2 -> {
-                        OutlinedTextField(
-                            value = xtreamServer,
-                            onValueChange = { xtreamServer = it },
-                            label = { Text("Server URL (http://domain:port)") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = NeonCyan,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = xtreamUser,
-                            onValueChange = { xtreamUser = it },
-                            label = { Text("Username") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = NeonCyan,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = xtreamPass,
-                            onValueChange = { xtreamPass = it },
-                            label = { Text("Password") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = NeonCyan,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    when (selectedTab) {
-                        0 -> onAddUrl(playlistName, m3uUrl)
-                        1 -> onAddText(playlistName, m3uText)
-                        2 -> onAddXtream(playlistName, xtreamServer, xtreamUser, xtreamPass)
-                    }
-                },
-                enabled = !isAdding,
-                colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)
-            ) {
-                if (isAdding) {
-                    CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(16.dp))
-                } else {
-                    Text("Save & Parse", fontWeight = FontWeight.Bold)
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
-            }
-        }
-    )
-}

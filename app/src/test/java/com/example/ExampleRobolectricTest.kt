@@ -7,6 +7,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.ChannelDao
 import com.example.data.local.PlaylistDao
 import com.example.data.service.M3UPlaylistService
+import com.example.data.service.M3UValidationResult
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -49,6 +50,33 @@ class ExampleRobolectricTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val appName = context.getString(R.string.app_name)
         assertEquals("Aura IPTV", appName)
+    }
+
+    @Test
+    fun `test M3U URL syntax validation`() {
+        // Empty URL
+        val emptyResult = m3uPlaylistService.validateUrlSyntax("")
+        assertTrue(emptyResult is M3UValidationResult.Invalid)
+        assertEquals("URL cannot be empty", (emptyResult as M3UValidationResult.Invalid).reason)
+
+        // Missing scheme
+        val noSchemeResult = m3uPlaylistService.validateUrlSyntax("example.com/playlist.m3u")
+        assertTrue(noSchemeResult is M3UValidationResult.Invalid)
+        assertEquals("URL must start with http:// or https://", (noSchemeResult as M3UValidationResult.Invalid).reason)
+
+        // Valid HTTP and HTTPS URLs
+        val validHttps = m3uPlaylistService.validateUrlSyntax("https://iptv-org.github.io/iptv/index.m3u")
+        assertTrue(validHttps is M3UValidationResult.Valid)
+
+        val validHttp = m3uPlaylistService.validateUrlSyntax("http://example.com:8080/live.m3u8")
+        assertTrue(validHttp is M3UValidationResult.Valid)
+    }
+
+    @Test
+    fun `test remote URL validation blocks invalid schemes before network`() = runBlocking {
+        val invalidResult = m3uPlaylistService.validateRemoteM3UUrl("ftp://invalid.com/test.m3u")
+        assertTrue(invalidResult is M3UValidationResult.Invalid)
+        assertEquals("URL must start with http:// or https://", (invalidResult as M3UValidationResult.Invalid).reason)
     }
 
     @Test

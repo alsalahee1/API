@@ -247,6 +247,8 @@ fun AuraIptvApp(viewModel: IptvViewModel) {
                                 PlaylistManagerScreen(
                                     playlists = playlists,
                                     isAdding = isAddingPlaylist,
+                                    onValidateUrlSyntax = { viewModel.validateUrlSyntax(it) },
+                                    onValidateRemoteUrl = { viewModel.validateRemoteM3UUrl(it) },
                                     onAddUrl = { name, url -> viewModel.addPlaylistUrl(name, url) },
                                     onAddText = { name, text -> viewModel.addPlaylistText(name, text) },
                                     onAddXtream = { name, s, u, p -> viewModel.addXtreamPlaylist(name, s, u, p) },

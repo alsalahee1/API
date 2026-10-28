@@ -223,7 +223,15 @@ class IptvViewModel @JvmOverloads constructor(
         }
     }
 
-    // Playlist imports
+    // Playlist imports & validation
+    fun validateUrlSyntax(url: String): com.example.data.service.M3UValidationResult {
+        return repository.m3uPlaylistService.validateUrlSyntax(url)
+    }
+
+    suspend fun validateRemoteM3UUrl(url: String): com.example.data.service.M3UValidationResult {
+        return repository.m3uPlaylistService.validateRemoteM3UUrl(url)
+    }
+
     fun addPlaylistUrl(name: String, url: String) {
         if (url.isBlank()) {
             _notification.value = UiNotification("Please enter a valid M3U stream URL", isError = true)
